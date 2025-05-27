@@ -1,0 +1,241 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;MIT License
+    2 00000000         
+    3 00000000         ;Copyright (c) 2025 Nguyen Hoang Minh Triet
+    4 00000000         
+    5 00000000         ;Permission is hereby granted, free of charge, to any pe
+                       rson obtaining a copy
+    6 00000000         ;of this software and associated documentation files (th
+                       e "Software"), to deal
+    7 00000000         ;in the Software without restriction, including without 
+                       limitation the rights
+    8 00000000         ;to use, copy, modify, merge, publish, distribute, subli
+                       cense, and/or sell copies
+    9 00000000         ;of the Software, and to permit persons to whom the Soft
+                       ware is furnished to do so,
+   10 00000000         ;subject to the following conditions:
+   11 00000000         
+   12 00000000         ;The above copyright notice and this permission notice s
+                       hall be included in all
+   13 00000000         ;copies or substantial portions of the Software.
+   14 00000000         
+   15 00000000         ;THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF A
+                       NY KIND, EXPRESS OR IMPLIED,
+   16 00000000         ;INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANT
+                       ABILITY, FITNESS FOR A
+   17 00000000         ;PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHA
+                       LL THE AUTHORS OR COPYRIGHT
+   18 00000000         ;HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABI
+                       LITY, WHETHER IN AN ACTION
+   19 00000000         ;OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+                        IN CONNECTION WITH THE
+   20 00000000         ;SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+   21 00000000         
+   22 00000000         ;-------------------------------------------------------
+                       ----------------
+   23 00000000         ;Author : Nguyen Hoang Minh Triet 
+   24 00000000         ;Email  : 23trietminh23@gmail.com  
+   25 00000000         ;GitHub : https://github.com/nguyentriet0810  
+   26 00000000         ;YouTube: https://www.youtube.com/@hoangtriet9999
+   27 00000000         ;-------------------------------------------------------
+                       ----------------
+   28 00000000         
+   29 00000000         ; Start of code section (read-only, aligned to 2 bytes)
+   30 00000000                 AREA             |.TEXT|, CODE, READONLY, ALIGN=
+2
+   31 00000000         
+   32 00000000         ; Indicate use of Thumb instruction set
+   33 00000000                 THUMB
+   34 00000000         
+   35 00000000         ; Ensure 8-byte stack alignment as per ARM AAPCS
+   36 00000000                 PRESERVE8
+   37 00000000         
+   38 00000000         ; External variable declaration (defined in C code)
+   39 00000000                 EXTERN           currentPt
+   40 00000000         
+   41 00000000         ; Export symbols to make functions visible to C code
+   42 00000000                 EXPORT           osSchedulerLaunch
+   43 00000000                 EXPORT           PendSV_Handler
+   44 00000000         
+   45 00000000         ; External function call (defined in C code)
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   46 00000000                 IMPORT           osSchedulerRoundRobin
+   47 00000000         
+   48 00000000         ;-------------------------------------------------------
+                       -----------------------
+   49 00000000         ; Function: osSchedulerLaunch
+   50 00000000         ; Description:
+   51 00000000         ;   Restores the first task context from its stack and s
+                       tarts execution.
+   52 00000000         ;   Used to launch the scheduler.
+   53 00000000         ;-------------------------------------------------------
+                       -----------------------
+   54 00000000         osSchedulerLaunch
+   55 00000000         ; Load address of currentPt (pointer to current task con
+                       trol block)
+   56 00000000 4810            LDR              R0, =currentPt
+   57 00000002         
+   58 00000002         ; Dereference currentPt to get the current task's stack 
+                       pointer
+   59 00000002 6802            LDR              R2, [R0]
+   60 00000004         
+   61 00000004         ; Load saved process stack pointer
+   62 00000004 F8D2 D000       LDR              SP, [R2]
+   63 00000008         
+   64 00000008         ; Restore R4-R11 (callee-saved registers)
+   65 00000008 E8BD 0FF0       POP              {R4-R11}
+   66 0000000C         
+   67 0000000C         ; Restore R0-R3 (caller-saved registers)
+   68 0000000C BC0F            POP              {R0-R3}
+   69 0000000E         
+   70 0000000E         ; Restore R12
+   71 0000000E F85D CB04       POP              {R12}
+   72 00000012         
+   73 00000012         ; Skip saved LR (reserved space)
+   74 00000012 B001            ADD              SP, SP, #4
+   75 00000014         
+   76 00000014         ; Restore LR (return address)
+   77 00000014 F85D EB04       POP              {LR}
+   78 00000018         
+   79 00000018         ; Skip saved xPSR (not needed here)
+   80 00000018 B001            ADD              SP, SP, #4
+   81 0000001A         
+   82 0000001A         ; Enable interrupts (clear PRIMASK)
+   83 0000001A B662            CPSIE            I
+   84 0000001C         
+   85 0000001C         ; Return from function (branch to address in LR)
+   86 0000001C 4770            BX               LR
+   87 0000001E         
+   88 0000001E         ;-------------------------------------------------------
+                       -----------------------
+   89 0000001E         ; Function: PendSV_Handler
+   90 0000001E         ; Description:
+   91 0000001E         ;   PendSV exception handler for context switching.
+   92 0000001E         ;   Saves current task context, calls scheduler, restore
+                       s next task context.
+   93 0000001E         ;-------------------------------------------------------
+                       -----------------------
+   94 0000001E         PendSV_Handler
+   95 0000001E         ; Disable interrupts (set PRIMASK)
+   96 0000001E B672            CPSID            I
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   97 00000020         
+   98 00000020         ; Save R4-R11 (callee-saved registers)
+   99 00000020 E92D 0FF0       PUSH             {R4-R11}
+  100 00000024         
+  101 00000024         ; Load address of currentPt
+  102 00000024 4807            LDR              R0, =currentPt
+  103 00000026         
+  104 00000026         ; Load pointer to current task's control block
+  105 00000026 6801            LDR              R1, [R0]
+  106 00000028         
+  107 00000028         ; Save current SP into currentPt
+  108 00000028 F8C1 D000       STR              SP, [R1]
+  109 0000002C         
+  110 0000002C         ; Save LR and currentPt before scheduler call
+  111 0000002C B501            PUSH             {R0, LR}
+  112 0000002E         
+  113 0000002E         ; Call round-robin scheduler to update currentPt
+  114 0000002E F7FF FFFE       BL               osSchedulerRoundRobin
+  115 00000032         
+  116 00000032         ; Restore R0 and LR after scheduler call
+  117 00000032 E8BD 4001       POP              {R0, LR}
+  118 00000036         
+  119 00000036         ; Load new task's stack pointer
+  120 00000036 6801            LDR              R1, [R0]
+  121 00000038         
+  122 00000038         ; Restore SP from new task
+  123 00000038 F8D1 D000       LDR              SP, [R1]
+  124 0000003C         
+  125 0000003C         ; Restore R4-R11
+  126 0000003C E8BD 0FF0       POP              {R4-R11}
+  127 00000040         
+  128 00000040         ; Enable interrupts
+  129 00000040 B662            CPSIE            I
+  130 00000042         
+  131 00000042         ; Return from handler
+  132 00000042 4770            BX               LR
+  133 00000044         
+  134 00000044         ; End of file
+  135 00000044                 END
+              00000000 
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M3 --apcs=interw
+ork --depend=.\objects\os_1.d -o.\objects\os_1.o -I.\device -I.\lib_ads1115 -I.
+\lib_com -I.\lib_hx711 -I.\lib_os -I.\lib_step_driver -I.\lib_timer -I.\lib_vl6
+180x -I.\RTE\Device\STM32F103C8 -I.\RTE\_Target_1 -IC:\Users\23tri\AppData\Loca
+l\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\Core\Include -IC:\Users\23tri\AppData\Local\A
+rm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include -IC:\Users\23tri\AppData\Local
+\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\StdPeriph_Driver\inc --predefine="__
+UVISION_VERSION SETA 531" --predefine="_RTE_ SETA 1" --predefine="STM32F10X_MD 
+SETA 1" --predefine="_RTE_ SETA 1" --list=.\listings\os.lst lib_os\os.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.TEXT 00000000
+
+Symbol: .TEXT
+   Definitions
+      At line 30 in file lib_os\os.s
+   Uses
+      None
+Comment: .TEXT unused
+PendSV_Handler 0000001E
+
+Symbol: PendSV_Handler
+   Definitions
+      At line 94 in file lib_os\os.s
+   Uses
+      At line 43 in file lib_os\os.s
+Comment: PendSV_Handler used once
+osSchedulerLaunch 00000000
+
+Symbol: osSchedulerLaunch
+   Definitions
+      At line 54 in file lib_os\os.s
+   Uses
+      At line 42 in file lib_os\os.s
+Comment: osSchedulerLaunch used once
+3 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+currentPt 00000000
+
+Symbol: currentPt
+   Definitions
+      At line 39 in file lib_os\os.s
+   Uses
+      At line 56 in file lib_os\os.s
+      At line 102 in file lib_os\os.s
+
+osSchedulerRoundRobin 00000000
+
+Symbol: osSchedulerRoundRobin
+   Definitions
+      At line 46 in file lib_os\os.s
+   Uses
+      At line 114 in file lib_os\os.s
+Comment: osSchedulerRoundRobin used once
+2 symbols
+340 symbols in table

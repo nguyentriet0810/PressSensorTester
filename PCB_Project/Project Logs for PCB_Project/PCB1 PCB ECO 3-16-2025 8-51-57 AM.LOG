@@ -1,0 +1,16 @@
+Removed Pin From Net: NetName=ADC_SCL Pin=STM2-14
+Removed Pin From Net: NetName=ADC_SDA Pin=STM2-15
+Removed Pin From Net: NetName=DAT Pin=STM2-16
+Removed Pin From Net: NetName=CLK Pin=STM2-17
+Removed Pin From Net: NetName=AS_GPO Pin=STM2-33
+Removed Pin From Net: NetName=AS_DIR Pin=STM2-34
+Removed Pin From Net: NetName=AS_SCL Pin=STM2-35
+Removed Pin From Net: NetName=AS_SDA Pin=STM2-36
+Added Pin To Net: NetName=DAT Pin=STM2-11
+Added Pin To Net: NetName=CLK Pin=STM2-12
+Added Pin To Net: NetName=AS_SCL Pin=STM2-14
+Added Pin To Net: NetName=AS_SDA Pin=STM2-15
+Added Pin To Net: NetName=AS_DIR Pin=STM2-16
+Added Pin To Net: NetName=AS_GPO Pin=STM2-17
+Added Pin To Net: NetName=ADC_SCL Pin=STM2-35
+Added Pin To Net: NetName=ADC_SDA Pin=STM2-36

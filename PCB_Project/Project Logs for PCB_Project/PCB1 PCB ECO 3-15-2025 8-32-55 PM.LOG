@@ -1,0 +1,4 @@
+Removed Pin From Net: NetName=RESET Pin=STM1-24
+Added Pin To Net: NetName=3.3V Pin=J2-08
+Added Pin To Net: NetName=RESET Pin=STM1-29
+Added Room: Name=Schematic

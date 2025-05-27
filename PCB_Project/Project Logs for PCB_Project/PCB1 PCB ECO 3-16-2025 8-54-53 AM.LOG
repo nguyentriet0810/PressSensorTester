@@ -1,0 +1,4 @@
+Removed Pin From Net: NetName=AS_DIR Pin=STM2-16
+Removed Pin From Net: NetName=AS_GPO Pin=STM2-17
+Added Pin To Net: NetName=AS_DIR Pin=STM2-13
+Added Pin To Net: NetName=AS_GPO Pin=STM2-16

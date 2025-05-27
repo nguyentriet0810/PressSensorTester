@@ -1,0 +1,8 @@
+Removed Pin From Net: NetName=RED Pin=H1-1
+Removed Pin From Net: NetName=BLK Pin=H1-2
+Removed Pin From Net: NetName=GRN Pin=H1-4
+Removed Pin From Net: NetName=YLW Pin=H1-5
+Added Pin To Net: NetName=YLW Pin=H1-1
+Added Pin To Net: NetName=GRN Pin=H1-2
+Added Pin To Net: NetName=BLK Pin=H1-4
+Added Pin To Net: NetName=RED Pin=H1-5

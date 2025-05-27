@@ -1,0 +1,11 @@
+Removed Pin From Net: NetName=+5 Pin=LT2-1
+Removed Pin From Net: NetName=GND Pin=LT2-2
+Removed Pin From Net: NetName=GND Pin=LT2-3
+Removed Pin From Net: NetName=+12 Pin=LT2-4
+Removed Member From Class: ClassName=Schematic Member=LT2
+Added Component: Designator=LT1(PCBComponent_1)
+Added Pin To Net: NetName=+5 Pin=LT1-1
+Added Pin To Net: NetName=GND Pin=LT1-2
+Added Pin To Net: NetName=GND Pin=LT1-3
+Added Pin To Net: NetName=+12 Pin=LT1-4
+Added Member To Class: ClassName=Schematic Member=Component LT1 LT3045

@@ -1,0 +1,25 @@
+--cpu Cortex-M3
+".\objects\os.o"
+".\objects\os_1.o"
+".\objects\main.o"
+".\objects\hx711.o"
+".\objects\adc.o"
+".\objects\iic.o"
+".\objects\step_driver.o"
+".\objects\com.o"
+".\objects\timer.o"
+".\objects\vl6180x.o"
+".\objects\misc.o"
+".\objects\stm32f10x_dma.o"
+".\objects\stm32f10x_flash.o"
+".\objects\stm32f10x_gpio.o"
+".\objects\stm32f10x_i2c.o"
+".\objects\stm32f10x_rcc.o"
+".\objects\stm32f10x_tim.o"
+".\objects\stm32f10x_usart.o"
+".\objects\startup_stm32f10x_md.o"
+".\objects\system_stm32f10x.o"
+--strict --scatter ".\Objects\mcu.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\Listings\mcu.map" -o .\Objects\mcu.axf

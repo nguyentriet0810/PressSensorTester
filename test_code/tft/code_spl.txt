@@ -1,0 +1,130 @@
+#include "stm32f10x.h"
+
+volatile uint32_t TimingDelay;
+
+void SysTick_Handler(void) {
+    if (TimingDelay) TimingDelay--;
+}
+
+void Delay_ms(uint32_t ms) {
+    TimingDelay = ms;
+    while (TimingDelay);
+}
+
+void SPI1_Config(void) {
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_SPI1, ENABLE);
+    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7; // SCK, MOSI
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3; // CS, RESET, DC
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    SPI_InitTypeDef SPI_InitStruct;
+    SPI_InitStruct.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+    SPI_InitStruct.SPI_Mode = SPI_Mode_Master;
+    SPI_InitStruct.SPI_DataSize = SPI_DataSize_8b;
+    SPI_InitStruct.SPI_CPOL = SPI_CPOL_Low;
+    SPI_InitStruct.SPI_CPHA = SPI_CPHA_1Edge;
+    SPI_InitStruct.SPI_NSS = SPI_NSS_Soft;
+    SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;
+    SPI_InitStruct.SPI_FirstBit = SPI_FirstBit_MSB;
+    SPI_Init(SPI1, &SPI_InitStruct);
+    SPI_Cmd(SPI1, ENABLE);
+}
+
+void TFT_SendCommand(uint8_t cmd) {
+    GPIO_ResetBits(GPIOA, GPIO_Pin_3); // DC thấp
+    GPIO_ResetBits(GPIOA, GPIO_Pin_1); // CS thấp
+    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+    SPI_I2S_SendData(SPI1, cmd);
+    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET);
+    GPIO_SetBits(GPIOA, GPIO_Pin_1); // CS cao
+}
+
+void TFT_SendData(uint8_t data) {
+    GPIO_SetBits(GPIOA, GPIO_Pin_3); // DC cao
+    GPIO_ResetBits(GPIOA, GPIO_Pin_1); // CS thấp
+    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+    SPI_I2S_SendData(SPI1, data);
+    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET);
+    GPIO_SetBits(GPIOA, GPIO_Pin_1); // CS cao
+}
+
+void TFT_Init(void) {
+    GPIO_SetBits(GPIOA, GPIO_Pin_2);   Delay_ms(50);
+    GPIO_ResetBits(GPIOA, GPIO_Pin_2); Delay_ms(50);
+    GPIO_SetBits(GPIOA, GPIO_Pin_2);   Delay_ms(50);
+
+    TFT_SendCommand(0x01); // Software Reset
+    Delay_ms(100);
+
+    TFT_SendCommand(0x11); // Sleep Out
+    Delay_ms(120);
+
+    TFT_SendCommand(0x3A); // Pixel Format Set
+    TFT_SendData(0x55);    // 16-bit/pixel (RGB565)
+
+    TFT_SendCommand(0x36); // Memory Access Control
+    TFT_SendData(0x48);    // MY=0, MX=1, MV=0, ML=0, BGR=1
+
+    TFT_SendCommand(0xB1); // Frame Control
+    TFT_SendData(0x00);
+    TFT_SendData(0x18);
+
+    TFT_SendCommand(0x13); // Normal Display Mode On
+    TFT_SendCommand(0x29); // Display ON
+    Delay_ms(100);
+}
+
+void TFT_FillScreen(uint16_t color) {
+    TFT_SendCommand(0x2A); // Column Address Set
+    TFT_SendData(0x00); TFT_SendData(0x00); // X bắt đầu: 0
+    TFT_SendData(0x00); TFT_SendData(0xEF); // X kết thúc: 239
+
+    TFT_SendCommand(0x2B); // Page Address Set
+    TFT_SendData(0x00); TFT_SendData(0x00); // Y bắt đầu: 0
+    TFT_SendData(0x01); TFT_SendData(0x3F); // Y kết thúc: 319
+
+    TFT_SendCommand(0x2C); // Memory Write
+    GPIO_SetBits(GPIOA, GPIO_Pin_3); // DC cao
+    GPIO_ResetBits(GPIOA, GPIO_Pin_1); // CS thấp
+    for (uint32_t i = 0; i < 240 * 320; i++) {
+        SPI_I2S_SendData(SPI1, color >> 8);
+        while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+        SPI_I2S_SendData(SPI1, color & 0xFF);
+        while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+    }
+    GPIO_SetBits(GPIOA, GPIO_Pin_1); // CS cao
+}
+
+int main(void) {
+    RCC_DeInit();
+    RCC_HSEConfig(RCC_HSE_ON);
+    RCC_WaitForHSEStartUp();
+    RCC_PLLConfig(RCC_PLLSource_HSE_Div1, RCC_PLLMul_9);
+    RCC_PLLCmd(ENABLE);
+    while (RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == RESET);
+    RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
+    RCC_HCLKConfig(RCC_SYSCLK_Div1);
+    RCC_PCLK1Config(RCC_HCLK_Div2);
+    RCC_PCLK2Config(RCC_HCLK_Div1);
+
+    SysTick->LOAD = 72000 - 1;
+    SysTick->VAL = 0;
+    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+
+    SPI1_Config();
+    TFT_Init();
+
+    while (1) {
+        TFT_FillScreen(0xF800); // Đỏ
+        Delay_ms(2000);
+        TFT_FillScreen(0x07E0); // Xanh lá
+        Delay_ms(2000);
+        TFT_FillScreen(0x001F); // Xanh dương
+        Delay_ms(2000);
+    }
+}

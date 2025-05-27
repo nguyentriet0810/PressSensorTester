@@ -1,0 +1,20 @@
+Removed Pin From Net: NetName=VCC Pin=C9-1
+Removed Pin From Net: NetName=+12 Pin=D3-1
+Removed Pin From Net: NetName=VCC Pin=D3-2
+Removed Pin From Net: NetName=GND Pin=D4-1
+Removed Pin From Net: NetName=GND Pin=D4-2
+Removed Member From Class: ClassName=Schematic Member=D3
+Removed Member From Class: ClassName=Schematic Member=D4
+Added Component: Designator=DB1(DIODE CAU 6A CAM)
+Add component (AddParameter): Name = "Chung_Loai"; Value = "c?m"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Don_Vi"; Value = "Con"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Ghi_Chu"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Kieu_Chan"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Ma_Hang"; Value = "MH004297"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Ten_Linh_Kien"; Value = "Diode C?u 6A 1000V KBL610"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=+12 Pin=C9-1
+Added Pin To Net: NetName=VCC Pin=DB1-1
+Added Pin To Net: NetName=+12 Pin=DB1-2
+Added Pin To Net: NetName=GND Pin=DB1-3
+Added Pin To Net: NetName=GND Pin=DB1-4
+Added Member To Class: ClassName=Schematic Member=Component DB1 6A 1000V

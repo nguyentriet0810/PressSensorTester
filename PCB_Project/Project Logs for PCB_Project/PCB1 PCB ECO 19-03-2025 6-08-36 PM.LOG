@@ -1,0 +1,4 @@
+Removed Pin From Net: NetName=CS Pin=STM1-23
+Removed Pin From Net: NetName=RESET Pin=STM1-24
+Added Pin To Net: NetName=CS Pin=STM1-26
+Added Pin To Net: NetName=RESET Pin=STM1-28

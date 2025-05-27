@@ -1,0 +1,8 @@
+Removed Pin From Net: NetName=T_IRQ Pin=STM1-25
+Removed Pin From Net: NetName=D/C Pin=STM1-26
+Removed Pin From Net: NetName=CS Pin=STM1-28
+Removed Pin From Net: NetName=RESET Pin=STM1-29
+Added Pin To Net: NetName=CS Pin=STM1-23
+Added Pin To Net: NetName=RESET Pin=STM1-24
+Added Pin To Net: NetName=D/C Pin=STM1-25
+Added Pin To Net: NetName=T_IRQ Pin=STM1-34
