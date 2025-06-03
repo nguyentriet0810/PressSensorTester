@@ -88,7 +88,7 @@ typedef struct {
 	uint32_t      current_resistor;
 	int16_t       times;
 	uint32_t      current_times;
-	int16_t       length;
+	int16_t       set_force;
 	uint16_t      current_length;
 	uint8_t       speed;
 	Auto_Blance   blance;
@@ -103,7 +103,7 @@ int ascii_to_int(uint8_t *str, int len);
 
 void Read_Resistor(void);
 void Read_Force(void);
-void Read_Distance (void);
+void Control_Motor(void);
 void Transmit_To_VCU(void);
 void Receive_Form_VCU(void);
 void System_Blance(void);

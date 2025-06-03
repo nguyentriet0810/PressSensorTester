@@ -383,17 +383,17 @@ void Draw_Page_Settings (void) {
 				
 	ILI9341_DrawText( 40, 55, "PULL MODE: " , RED   , BLACK, 3);
 	ILI9341_DrawText( 40, 90, "RES  MODE: " , RED   , BLACK, 3);
-	ILI9341_DrawText( 40,125, "LENGTH   : " , RED   , BLACK, 3);
+	ILI9341_DrawText( 40,125, "FORCE    : " , RED   , BLACK, 3);
 	ILI9341_DrawText( 40,160, "TIMES    : " , RED   , BLACK, 3);
 }
 void Draw_Page_Options (void) {
 	ILI9341_FillScreen(BLACK);
 	ILI9341_DrawText(10, 10, "OPTIONS"        , BLUE  , BLACK, 4);
 	
-	ILI9341_DrawText(40, 55, "PULL RIGHT "       , RED   , BLACK, 3);
-	ILI9341_DrawText(40, 90, "PULL LEFT"      , RED, BLACK, 3);
+	ILI9341_DrawText(40, 55, "PULL DOWN "       , RED   , BLACK, 3);
+	ILI9341_DrawText(40, 90, "PULL UP"      , RED, BLACK, 3);
 	ILI9341_DrawText(40,125, "COM  PORT: OFF" , RED, BLACK, 3);
-	ILI9341_DrawText(40,160, "SAVE DATA: OFF" , RED, BLACK, 3);
+	//ILI9341_DrawText(40,160, "SAVE DATA: OFF" , RED, BLACK, 3);
 }
 void Draw_Page_Start(void) {
 	ILI9341_FillScreen(BLACK);
@@ -402,8 +402,8 @@ void Draw_Page_Start(void) {
 	ILI9341_DrawText( 40, 55, "TIMES :"  , RED   , BLACK, 3);
 	ILI9341_DrawText( 40, 90, "FORCE :"  , RED   , BLACK, 3);
 	ILI9341_DrawText( 40,125, "RES   :"  , RED   , BLACK, 3);
-	ILI9341_DrawText( 40,160, "LENGTH:"  , RED   , BLACK, 3);
-	ILI9341_DrawText( 20,210, "TIME LEFT:" , RED   , BLACK, 2);
+	//ILI9341_DrawText( 40,160, "LENGTH:"  , RED   , BLACK, 3);
+	//ILI9341_DrawText( 20,210, "TIME LEFT:" , RED   , BLACK, 2);
 }
 
 void Draw_Warning(void) {

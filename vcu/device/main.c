@@ -71,7 +71,7 @@ void Draw_Display(void) {
 				} else if (device.res == Res_Auto){
 					ILI9341_DrawText(220, 90, " ON  "  , RED   , BLACK, 3);
 				}
-				Tach_So_Int_Char(device.length, buffer, 4);
+				Tach_So_Int_Char(device.force, buffer, 4);
 				ILI9341_DrawText(238, 125, buffer, RED   , BLACK, 3);
 				Tach_So_Int_Char(device.times , buffer, 4);
 				ILI9341_DrawText(238, 160, buffer, RED   , BLACK, 3);
@@ -95,25 +95,25 @@ void Draw_Display(void) {
 			} 
 			if (g_draw_state == 2) {
 				if (device.s_pull == PULL_UP) {
-					ILI9341_DrawText(40, 55, "PULL RIGHT"  , GREEN, BLACK, 3);
-					ILI9341_DrawText(40, 90, "PULL LEFT"   , RED  , BLACK, 3);
+					ILI9341_DrawText(40, 55, "PULL DOWN"  , GREEN, BLACK, 3);
+					ILI9341_DrawText(40, 90, "PULL UP"   , RED  , BLACK, 3);
 				} else if (device.s_pull == PULL_DW) {
-					ILI9341_DrawText(40, 55, "PULL RIGHT"  , RED  , BLACK, 3);
-					ILI9341_DrawText(40, 90, "PULL LEFT"   , GREEN, BLACK, 3);
+					ILI9341_DrawText(40, 55, "PULL DOWN"  , RED  , BLACK, 3);
+					ILI9341_DrawText(40, 90, "PULL UP"   , GREEN, BLACK, 3);
 				} else {
-					ILI9341_DrawText(40, 55, "PULL RIGHT"  , RED  , BLACK, 3);
-					ILI9341_DrawText(40, 90, "PULL LEFT"   , RED  , BLACK, 3);
+					ILI9341_DrawText(40, 55, "PULL DOWN"  , RED  , BLACK, 3);
+					ILI9341_DrawText(40, 90, "PULL UP"   , RED  , BLACK, 3);
 				} 
 				if (device.uart == Uart_On) {
 					ILI9341_DrawText(40,125, "COM  PORT: ON ", GREEN, BLACK, 3);
 				} else {
 					ILI9341_DrawText(40,125, "COM  PORT: OFF", RED  , BLACK, 3);
 				}
-				if (device.sd == Sd_On) {
-					ILI9341_DrawText(40,160, "SAVE DATA: ON ", GREEN, BLACK, 3);
-				} else {
-					ILI9341_DrawText(40,160, "SAVE DATA: OFF", RED, BLACK, 3);
-				}
+//				if (device.sd == Sd_On) {
+//					ILI9341_DrawText(40,160, "SAVE DATA: ON ", GREEN, BLACK, 3);
+//				} else {
+//					ILI9341_DrawText(40,160, "SAVE DATA: OFF", RED, BLACK, 3);
+//				}
 				g_draw_state = 3;
 			}
 			if (g_draw_state == 3) {
@@ -140,12 +140,12 @@ void Draw_Display(void) {
 				//hien thi dien tro dang do duoc
 				char data[7];
 				if (device.current_res > 99999999) {
-					data[0] = (device.current_res / 100000000) % 10 + '0';
-					data[1] = (device.current_res / 10000000) % 10 + '0';
-					data[2] = (device.current_res / 1000000)   % 10 + '0';
+					data[0] = (device.current_res / 10000000000) % 10 + '0';
+					data[1] = (device.current_res / 1000000000)  % 10 + '0';
+					data[2] = (device.current_res / 100000000)   % 10 + '0';
 					data[3] = '.';
-					data[4] = (device.current_res / 100000)    % 10 + '0';
-					data[5] = (device.current_res / 10000)     % 10 + '0';
+					data[4] = (device.current_res / 10000000)    % 10 + '0';
+					data[5] = (device.current_res / 1000000)     % 10 + '0';
 					data[6] = '\0';
 					ILI9341_DrawText(280, 125, "MR" , WHITE, BLACK, 3);
 				} else if ((device.current_res > 99999) && (device.current_res <= 99999999)) {
@@ -170,8 +170,8 @@ void Draw_Display(void) {
 				ILI9341_DrawText(170, 125, data, WHITE, BLACK, 3);
 				
 				//hien thi khoang cach do duoc
-				Tach_So_Int_Char(device.current_length    ,buffer, 3);
-				ILI9341_DrawText(170, 160, buffer, WHITE, BLACK, 3);
+				//Tach_So_Int_Char(device.current_length    ,buffer, 3);
+				//ILI9341_DrawText(170, 160, buffer, WHITE, BLACK, 3);
 			}
 		} else if (device.page == Page_Alarm) {
 			if (g_draw_state == 1) {
@@ -236,9 +236,9 @@ void Check_Button(void) {
 		} 
 		if ( GPIO_ReadInputDataBit(Button_Port, Button_Plus  ) == 0) {
 			if ((device.page == Page_Settings) && (Y_Coordinate == 125)) {
-				device.length += 1;
-				if (device.length > 100) {
-					device.length = 100;
+				device.force += 1;
+				if (device.force > 50) {
+					device.force = 50;
 				}
 			} else if ((device.page == Page_Settings) && (Y_Coordinate == 160)) {
 				device.times += 1;
@@ -264,9 +264,9 @@ void Check_Button(void) {
 		} 
 		if ( GPIO_ReadInputDataBit(Button_Port, Button_Sub ) == 0) {
 			if ((device.page == Page_Settings) && (Y_Coordinate == 125)) {
-				device.length -= 1;
-				if (device.length < 1) {
-					device.length = 0;
+				device.force -= 1;
+				if (device.force < 1) {
+					device.force = 1;
 				}
 			} else if ((device.page == Page_Settings) && (Y_Coordinate == 160)) {
 				device.times -= 1;
@@ -308,10 +308,10 @@ void Transmit_Data(void) {
 			Usart1_printf("TTTTTTTTTTTTTTTT");
 		}
 		if (device.page == Page_Start) {
-			if ((device.length == 0) || (device.times == 0)) {
+			if ((device.force == 0) || (device.times == 0)) {
 				g_draw_state = 2;
 			} else {
-				Tach_So_Int_Char(device.length,l_length_buffer, 4);
+				Tach_So_Int_Char(device.force,l_length_buffer, 4);
 				Tach_So_Int_Char(device.times ,l_times_buffer , 4);
 				Tach_So_Int_Char(device.speed ,l_speed_buffer , 4);
 				Usart1_printf("S%d%d%s%s%d%s",device.func,device.res,l_length_buffer,l_times_buffer,device.blance,l_speed_buffer);
@@ -332,28 +332,28 @@ void Receive_Data(void) {
 				device.mode           = buffer_mcu_data[26];
 				g_buffer_mcu_flag = 0;
 				if (device.uart == Uart_On) {
-					Usart3_printf("%d,%d,0,%d,%d,%d,0,%d\n",device.func,device.current_times,device.length,device.current_force,device.current_res,device.current_length);
+					Usart3_printf("%d,%d,0,%d,%d,%d,0,%d\n",device.func,device.current_times,device.force,device.current_force,device.current_res,device.current_length);
 				}
 				g_draw_state = 2;
 				osSemaphore_Give(&Sema_Draw);
-			} else if (buffer_mcu_data[0] == 'R') {
-				device.page = Page_Alarm;
-				g_draw_state = 1;
-				osSemaphore_Give(&Sema_Draw);
-			} else if (buffer_mcu_data[0] == 'L') {
-				device.page = Page_Alarm;
-				g_draw_state = 1;
-				osSemaphore_Give(&Sema_Draw);
-			} else if (buffer_mcu_data[0] == 'F') {
-				device.page = Page_Alarm;
-				g_draw_state = 1;
-				osSemaphore_Give(&Sema_Draw);
-			} else {
-				
 			}
+//			} else if (buffer_mcu_data[0] == 'R') {
+//				device.page = Page_Alarm;
+//				g_draw_state = 1;
+//				osSemaphore_Give(&Sema_Draw);
+//			} else if (buffer_mcu_data[0] == 'L') {
+//				device.page = Page_Alarm;
+//				g_draw_state = 1;
+//				osSemaphore_Give(&Sema_Draw);
+//			} else if (buffer_mcu_data[0] == 'F') {
+//				device.page = Page_Alarm;
+//				g_draw_state = 1;
+//				osSemaphore_Give(&Sema_Draw);
+//			} else {
+//				
+//			}
 		}
 		if (g_buffer_pc_flag == 1) {
-			
 			g_buffer_pc_flag = 0;
 		}
 		osThreadYield();
@@ -402,7 +402,7 @@ int main (void) {
 	osKernelAdd1Thread(*(Draw_Display));
 	osKernelAdd1Thread(*(Transmit_Data));
 	osKernelAdd1Thread(*(Receive_Data));
-	osKernelAdd1Thread(*(SD_Save_Data));
+	//osKernelAdd1Thread(*(SD_Save_Data));
 	osKernelLaunch(quanta);
 	
 //	Touch_Init();
@@ -504,8 +504,8 @@ void Setup(Enable_Peripheral *val) {
 	val->page   = Page_Defaut;
 	val->uart   = Uart_Off;
 	val->sd     = Sd_Off;
-	val->length = 0;
-	val->times  = 0;
+	val->force  = 1;
+	val->times  = 1;
 	val->func   = PULL;
 	val->step   = Step_1MM;
 	val->res    = Res_Off;

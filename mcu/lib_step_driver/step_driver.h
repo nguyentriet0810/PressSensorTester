@@ -39,14 +39,9 @@ YouTube: https://www.youtube.com/@hoangtriet9999
 #include "timer.h"
 
 #define Step_Port    GPIOA
-#define Step_Enable  GPIO_Pin_7
-#define Micro_Step_1 GPIO_Pin_6
-#define Micro_Step_2 GPIO_Pin_5
-#define Micro_Step_3 GPIO_Pin_4
-#define Step_Reset   GPIO_Pin_3
-#define Step_Sleep   GPIO_Pin_2
-#define Step_Pul     GPIO_Pin_1
-#define Step_Dir     GPIO_Pin_0
+#define Step_Pul     GPIO_Pin_1   // TIM2_CH2 (AF_PP)
+#define Step_En      GPIO_Pin_3   // GPIO output
+#define Step_Dir     GPIO_Pin_2   // GPIO output
 
 void Step_Driver_Init(void);
 

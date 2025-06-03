@@ -63,7 +63,7 @@ YouTube: https://www.youtube.com/@hoangtriet9999
  *      0       | Command         | uint8_t  | 1
  *      1       | Pull mode       | uint8_t  | 1
  *      2       | Res mode        | uint8_t  | 1
- *      3       | Length          | uint32_t | 4
+ *      3       | Force           | uint32_t | 4
  *      7       | Times           | uint32_t | 4
  *     11       | Balance         | uint8_t  | 1
  *     12       | Speed           | uint32_t | 4
@@ -78,8 +78,8 @@ YouTube: https://www.youtube.com/@hoangtriet9999
  * Byte  Offset | Description     | Type     | Size
  * ------------ | --------------- | -------- | -----
  *      0       | Command         | uint8_t  | 1
- *      1       | Force           | int32_t  | 5 (note: possibly misaligned size)
- *      6       | Resistor        | uint32_t | 10 (string/BCD + terminator?)
+ *      1       | Force           | int32_t  | 5 
+ *      6       | Resistor        | uint32_t | 10 
  *     16       | Length          | uint8_t  | 5
  *     21       | Times           | uint8_t  | 5
  *     26       | Mode            | uint8_t  | 1

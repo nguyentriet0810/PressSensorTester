@@ -37,8 +37,7 @@ void Timer2_Init(void) {
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
   TIM_TimeBaseInitTypeDef timerInitStructure;
-	TIM_OCInitTypeDef TIM_OCInitStructure;
-
+//	TIM_OCInitTypeDef TIM_OCInitStructure;
 
   timerInitStructure.TIM_Prescaler = 71;
   timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -47,13 +46,13 @@ void Timer2_Init(void) {
   timerInitStructure.TIM_RepetitionCounter = 0;
   TIM_TimeBaseInit(TIM2, &timerInitStructure);
 
-	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_Pulse = 499;             // Duty cycle
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-	TIM_OC2Init(TIM2, &TIM_OCInitStructure);
-	
-	TIM_OC2PreloadConfig(TIM2, TIM_OCPreload_Enable);
+//	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+//	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+//	TIM_OCInitStructure.TIM_Pulse = 499;             // Duty cycle
+//	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+//	TIM_OC2Init(TIM2, &TIM_OCInitStructure);
+
+//	TIM_OC2PreloadConfig(TIM2, TIM_OCPreload_Enable);
 	TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);      // Cho phép ng?t
   TIM_Cmd(TIM2, ENABLE);                          // B?t d?u timer
 

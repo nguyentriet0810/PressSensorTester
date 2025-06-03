@@ -97,7 +97,7 @@ typedef struct {
 	Step_Size step;
 	Resistor_Mode res;
 	int16_t times;
-	int16_t length;
+	int16_t force;
 	Sd_Mode sd;
 	Uart_Mode uart;
 	uint8_t  alarm;

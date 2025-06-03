@@ -69,7 +69,7 @@ const Button_Top_Action top_actions[] = {
 const Button_Bottom_Action bottom_actions[] = {
 	{Page_Defaut  , 195, action_bottom},
 	{Page_Settings, 160, action_bottom},
-	{Page_Options , 160, action_bottom},
+	{Page_Options , 125, action_bottom},
 };
 
 const Button_Plus_Action plus_actions[] = {

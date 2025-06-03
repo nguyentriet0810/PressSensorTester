@@ -38,6 +38,12 @@ void Receive_Form_VCU(void) {
 		osCooperative_Wait(&Sema_usart1_handler);
 		if (buffer_usart1_data[0] == 'S') {
 			system_reset(&device);
+			for(int z = 0; z < 3; z++) {
+				device.offset = weigh();
+				if (device.offset == 0) {
+					device.offset = weigh();
+				}
+			}
 			Timer3_Delay_us(10);
 			if (buffer_usart1_data[1] == '0') {
 				device.current_pull = PULL;
@@ -55,17 +61,17 @@ void Receive_Form_VCU(void) {
 			} else {
 				device.blance = Blance_Disable;
 			}
-			device.length = ascii_to_int(&buffer_usart1_data[3],4);
+			device.set_force = (ascii_to_int(&buffer_usart1_data[3],4)) * 1000;
 			device.times  = ascii_to_int(&buffer_usart1_data[7],4);
 			device.speed = 1;
 		} else if (buffer_usart1_data[0] == 'T') {
-			GPIO_SetBits(Step_Port, Step_Enable);
+			GPIO_SetBits(Step_Port, Step_En);
 			GPIO_ResetBits(Step_Port, Step_Dir);
 		} else if (buffer_usart1_data[0] == 'U') {
-			GPIO_ResetBits(Step_Port, Step_Enable);
+			GPIO_ResetBits(Step_Port, Step_En);
 			GPIO_ResetBits(Step_Port, Step_Dir);
 		} else if (buffer_usart1_data[0] == 'D') {
-			GPIO_ResetBits(Step_Port, Step_Enable);
+			GPIO_ResetBits(Step_Port, Step_En);
 			GPIO_SetBits(Step_Port, Step_Dir);
 		}
 	}
@@ -75,51 +81,50 @@ void System_Blance(void) {
 	while (1) {
 		osCooperative_Wait(&Sema_Blance);
 		if (device.blance == Blance_Enable) {
-			while (device.current_force < 2000) {
+			while (device.current_force < 30) {
 				GPIO_ResetBits(Step_Port, Step_Dir);
-				GPIO_ResetBits(Step_Port, Step_Enable);
+				GPIO_ResetBits(Step_Port, Step_En);
 			} 
-			while (device.current_force > 50) {
+			while (device.current_force > 30) {
 				GPIO_SetBits(Step_Port, Step_Dir);
+				GPIO_SetBits(Step_Port, Step_Pul);
 			}
 		}
 		GPIO_ResetBits(Step_Port, Step_Dir);
-		GPIO_SetBits(Step_Port, Step_Enable);
+		GPIO_SetBits(Step_Port, Step_En);
 		device.blance = Blance_Disable;
 		osThreadYield();
 	}
 }
 
-void Read_Distance (void) {
+void Control_Motor(void) {
 	while (1) {
-		uint32_t delay = 0;
+		//uint32_t delay = 1;
 		if ((device.blance == Blance_Disable) && (device.current_pull != NO_PULL)) {
 			device.pull = Current_pull;
 			if (device.pull == Current_pull) {
-				while (device.current_length < device.length) {
+				while (device.current_force < device.set_force) {
 					GPIO_ResetBits(Step_Port, Step_Dir);
-					GPIO_ResetBits(Step_Port, Step_Enable);
-					delay = g_Timer_Tick;
-					while((g_Timer_Tick - delay) < 1370) {};
-					device.current_length += 1;
-					if (device.current_length >= device.length) {
+					GPIO_ResetBits(Step_Port, Step_En);
+				}
+				if (device.current_force >= device.set_force) {
 					device.pull = Current_re;
-					}
 				}
 			} 
 			if (device.pull == Current_re) {
-				while (device.current_length > 0) {
+				while (device.current_force > 10) {
 					GPIO_SetBits(Step_Port, Step_Dir);
-					GPIO_ResetBits(Step_Port, Step_Enable);
-					delay = g_Timer_Tick;
-					while((g_Timer_Tick - delay) < 1370) {};
-					device.current_length -=1;
-					if (device.current_length <= 0) {
+					GPIO_ResetBits(Step_Port, Step_En);
+				}
+				if (device.current_force <= 10) {
+					Timer3_Delay_us(50);
+					if (device.current_force <= 10) {
 						device.pull = Current_pull;
 						device.current_times += 1;
 						if (device.current_times >= device.times) {
-							GPIO_SetBits(Step_Port, Step_Enable);
+							Timer3_Delay_ms(1000);
 							device.current_pull = NO_PULL;
+							GPIO_SetBits(Step_Port, Step_En);
 						}
 					}
 				}
@@ -131,16 +136,21 @@ void Read_Distance (void) {
 
 void Read_Force(void) {
 	while (1) {
-//		if (device.res == Res_Auto) {
-//			osSemaphore_Give(&Sema_RES);
-//		}
-		device.current_force = -getForce(device.offset);
-//		if (device.blance == Blance_Disable) {
-//			if ((device.current_force > 55000) || (device.current_force < -5000)) {
-//				GPIO_SetBits(Step_Port, Step_Enable);
-//			}
-//		}
-//		osSemaphore_Give(&Sema_COM);
+		int32_t value_force = 0;
+		if (device.res == Res_Auto) {
+			osSemaphore_Give(&Sema_RES);
+		}
+		value_force = -getForce(device.offset);
+		if (value_force <= 0) {
+			value_force = -getForce(device.offset);
+			device.current_force = 11;
+		} else {
+			device.current_force = value_force;
+		}
+		if (device.current_force >= device.set_force) {
+			GPIO_SetBits(Step_Port, Step_En);
+		}
+		osSemaphore_Give(&Sema_COM);
 	}
 }
 
@@ -148,13 +158,13 @@ void Read_Resistor(void) {
 	while (1) {
 		int8_t count = 0;
 		float value = 0;
-		//osCooperative_Wait(&Sema_RES);
+		osCooperative_Wait(&Sema_RES);
 		switch (count) {
 			case 0:
 				value = ADC_Range7_Resistance(2);
 				count++;
 				if (value > 2000000) {
-					device.current_resistor = (uint32_t)((value) / 1 );
+					device.current_resistor = (uint32_t)((value * 100) / 1 );
 					count = 0;
 					break;
 				}
@@ -162,7 +172,7 @@ void Read_Resistor(void) {
 				value = ADC_Range6_Resistance(2);
 				count++;
 				if (value > 200000) {
-					device.current_resistor = (uint32_t)((value) / 1 );
+					device.current_resistor = (uint32_t)((value * 100) / 1 );
 					count = 0;
 					break;
 				}
@@ -170,7 +180,7 @@ void Read_Resistor(void) {
 				value = ADC_Range5_Resistance(3, pga_2V);
 				count++;
 				if (value > 20000) {
-					device.current_resistor = (uint32_t)((value) / 1 );
+					device.current_resistor = (uint32_t)((value * 100) / 1 );
 					count = 0;
 					break;
 				}
@@ -178,7 +188,7 @@ void Read_Resistor(void) {
 				value = ADC_Range4_Resistance(3, pga_2V);
 				count++;
 				if (value > 2000) {
-					device.current_resistor = (uint32_t)((value) / 1 );
+					device.current_resistor = (uint32_t)((value * 100) / 1 );
 					count = 0;
 					break;
 				}
@@ -186,7 +196,7 @@ void Read_Resistor(void) {
 				value = ADC_Range3_Resistance(3, pga_2V);
 				count++;
 				if (value > 200) {
-					device.current_resistor = (uint32_t)((value) / 1 );
+					device.current_resistor = (uint32_t)((value * 100) / 1 );
 					count = 0;
 					break;
 				}
@@ -194,7 +204,7 @@ void Read_Resistor(void) {
 				value = ADC_Range2_Resistance(3, pga_2V);
 				count++;
 				if (value > 20) {
-					device.current_resistor = (uint32_t)((value) / 1 );
+					device.current_resistor = (uint32_t)((value * 100) / 1 );
 					count = 0;
 					break;
 				}
@@ -202,7 +212,7 @@ void Read_Resistor(void) {
 				value = ADC_Range1_Resistance(3, pga_2V);
 				count++;
 				if (value > 0.4) {
-					device.current_resistor = (uint32_t)((value) / 1 );
+					device.current_resistor = (uint32_t)((value * 100) / 1 );
 					count = 0;
 					break;
 				}
@@ -221,15 +231,15 @@ void Transmit_To_VCU(void) {
 		char buffer_length[6];
 		char buffer_times[6];
 		if (buffer_usart1_data[0] == 'S') {
-			if ((device.length <= 0) || (device.times <= 0)) { 
+			if ((device.set_force <= 0) || (device.times <= 0)) { 
 				Usart1_printf("EEEEEEEEEEEEEEEEEEEEEEEEEEE");
-			}	else if (device.current_force < -5000 ) {
+			}	else if (device.current_force < -50000 ) {
 				Usart1_printf("RRRRRRRRRRRRRRRRRRRRRRRRRRR");
 			}	else if (device.current_force > 55000 ) {
 				Usart1_printf("OOOOOOOOOOOOOOOOOOOOOOOOOOO");
 			}	else {
 				if (device.current_force <= 0) {
-					device.current_force = 0;
+					device.current_force = 11;
 				}
 				buffer_force[0] = (device.current_force / 10000) % 10 + '0';
 				buffer_force[1] = (device.current_force / 1000)  % 10 + '0';
@@ -272,6 +282,7 @@ void Transmit_To_VCU(void) {
 		osThreadYield();
 	}
 }
+
 int32_t l_set_system;
 int main (void) {
 	
@@ -281,19 +292,19 @@ int main (void) {
 	IIC2_Init();
 	ADC_GPIO_Measurement_Range();
 	
-	//Step_Driver_Init();
+	Step_Driver_Init();
 	Timer2_Init();
 	
 	Timer3_Init();
 
 	Force_Sensor_Init();
 	
-//	Usart1_Init();
+	Usart1_Init();
 //	
-//	GPIO_SetBits(SCK_PORT, SCK_PIN);
-//  Timer3_Delay_us(10);
-//  GPIO_ResetBits(SCK_PORT, SCK_PIN);
-//  Timer3_Delay_us(10);
+	GPIO_SetBits(SCK_PORT, SCK_PIN);
+  Timer3_Delay_us(10);
+  GPIO_ResetBits(SCK_PORT, SCK_PIN);
+  Timer3_Delay_us(10);
 	
 	for(int z = 0; z < 3; z++) {
 		device.offset = weigh();
@@ -304,25 +315,29 @@ int main (void) {
 //	I2C1_Init();
 //	VL6180X_Init();
 	
-	osKernelInit();
-	//osKernelAdd1Thread(*(Receive_Form_VCU));
-	//osKernelAdd1Thread(*(System_Blance));
-	osKernelAdd1Thread(*(Read_Force));
-	osKernelAdd1Thread(*(Read_Resistor));
-	//osKernelAdd1Thread(*(Read_Distance));
-	//osKernelAdd1Thread(*(Transmit_To_VCU));
-	osKernelLaunch(quanta);
+	// Enable motor driver
+//  GPIO_ResetBits(Step_Port, Step_En);   // EN = HIGH (tùy c?u hình TB6600 c?a b?n)
+//  GPIO_SetBits(Step_Port, Step_Dir); // DIR = LOW (quay 1 chi?u)
+//	
+//	osKernelInit();
+//	osKernelAdd1Thread(*(Receive_Form_VCU));
+//	osKernelAdd1Thread(*(System_Blance));
+//	osKernelAdd1Thread(*(Read_Force));
+//	osKernelAdd1Thread(*(Read_Resistor));
+//	osKernelAdd1Thread(*(Control_Motor));
+//	osKernelAdd1Thread(*(Transmit_To_VCU));
+//	osKernelLaunch(quanta);
   	
 	while (1){
-		// quay sang trai
-		l_set_system = getForce(device.offset);
-		GPIO_ResetBits(Step_Port, Step_Enable);
-		GPIO_SetBits(Step_Port, Step_Dir);
-		 
-		if (l_set_system < -3000) {
-			GPIO_ResetBits(Step_Port, Step_Dir);
-			Timer3_Delay_ms(27400);
-			GPIO_SetBits(Step_Port, Step_Enable);
+//		// quay sang trai
+//		l_set_system = -getForce(device.offset);
+//		GPIO_ResetBits(Step_Port, Step_En);
+//		GPIO_ResetBits(Step_Port, Step_Dir);
+//		 
+//		if (l_set_system > 2000) {
+//			GPIO_SetBits(Step_Port, Step_Dir);
+//			Timer3_Delay_ms(30000);
+//			GPIO_SetBits(Step_Port, Step_En);
 			for(int z = 0; z < 3; z++) {
 				device.offset = weigh();
 				if (device.offset == 0) {
@@ -338,12 +353,12 @@ int main (void) {
 			osKernelInit();
 			osKernelAdd1Thread(*(Receive_Form_VCU));
 			osKernelAdd1Thread(*(System_Blance));
-			osKernelAdd1Thread(*(Read_Distance));
+			osKernelAdd1Thread(*(Control_Motor));
 			osKernelAdd1Thread(*(Read_Force));
 			osKernelAdd1Thread(*(Read_Resistor));
 			osKernelAdd1Thread(*(Transmit_To_VCU));
 			osKernelLaunch(quanta);
-		}
+		//}
 	}
 }
 
@@ -381,7 +396,7 @@ void system_setup(Enable_Peripheral *val) {
 	val->current_pull = NO_PULL;
 	val->times = 0;
 	val->current_times = 0;
-	val->length = 0;
+	val->set_force = 0;
 	val->current_length = 0;
 	val->offset = 0;
 	val->current_force = 0;
@@ -476,6 +491,11 @@ void TIM2_IRQHandler(void) {
 			if(tcbs[i].Sleep > 0){
 				tcbs[i].Sleep--;
 			}
+		}
+		if((g_Timer_Tick % 2) == 0) {
+			GPIO_SetBits(Step_Port, Step_Pul);
+		} else {
+			GPIO_ResetBits(Step_Port, Step_Pul);
 		}
 	}
 }
