@@ -147,13 +147,13 @@ float ADC_Range6_Resistance(uint16_t freq) {
 	ADC_Single_Init(A0_GND, freq, pga_6V);
 	int16_t val = (int16_t)IIC2_Read(ADS1115_ADDR, ADS1115_REG_CONVERSION);
 	voltage2 = (val * 6.144) / 32768.0;
-	for(int i = 0; i < 50; i++) {
+	for(int i = 0; i < 30; i++) {
 		ADC_Single_Init(A2_GND, 6, pga_4V);
 		val = (int16_t)IIC2_Read(ADS1115_ADDR, ADS1115_REG_CONVERSION);
 		voltage1 = (val * 4.096) / 32768.0;
 		Resistance += ((voltage2 - voltage1) * 560000) / voltage1;
 	}
-	Resistance = Resistance / 50;
+	Resistance = Resistance / 30;
 	GPIOA->BSRR = GPIO_BSRR_BS4;
 	return Resistance;
 }
@@ -165,13 +165,13 @@ float ADC_Range7_Resistance(uint16_t freq) {
 	ADC_Single_Init(A0_GND, freq, pga_6V);
 	int16_t  val = IIC2_Read(ADS1115_ADDR, ADS1115_REG_CONVERSION);
 	voltage2 = (val * 6.144) / 32768.0;
-	for (int i = 0; i < 50; i++) {
+	for (int i = 0; i < 30; i++) {
 		ADC_Single_Init(A2_GND, 6, pga_4V);
 		val = IIC2_Read(ADS1115_ADDR, ADS1115_REG_CONVERSION);
 		voltage1 = (val * 4.096) / 32768.0;
 		Resistance += ((voltage2 - voltage1) * 5600000) / voltage1;
 	}
-	Resistance = Resistance / 50;
+	Resistance = Resistance / 30;
 	GPIOA->BSRR = GPIO_BSRR_BS5;
 	return Resistance;
 }

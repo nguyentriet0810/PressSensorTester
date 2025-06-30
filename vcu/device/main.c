@@ -139,7 +139,7 @@ void Draw_Display(void) {
 				ILI9341_DrawText(280, 90, "mN" , WHITE, BLACK, 3);
 				//hien thi dien tro dang do duoc
 				char data[7];
-				if (device.current_res > 99999999) {
+				if ((device.current_res > 99999999) && (device.current_res <= 2000000000)) {
 					data[0] = (device.current_res / 10000000000) % 10 + '0';
 					data[1] = (device.current_res / 1000000000)  % 10 + '0';
 					data[2] = (device.current_res / 100000000)   % 10 + '0';
@@ -166,6 +166,15 @@ void Draw_Display(void) {
 					data[5] = (device.current_res / 1)          % 10 + '0';
 					data[6] = '\0';
 					ILI9341_DrawText(280, 125, " R" , WHITE, BLACK, 3);
+				} else {
+					data[0] = 0 + '0';
+					data[1] = 0 + '0';
+					data[2] = 'L';
+					data[3] = '.';
+					data[4] = 0 + '0';
+					data[5] = 0 + '0';
+					data[6] = '\0';
+					ILI9341_DrawText(280, 125, "MR" , WHITE, BLACK, 3);
 				}
 				ILI9341_DrawText(170, 125, data, WHITE, BLACK, 3);
 				
@@ -185,6 +194,10 @@ void Draw_Display(void) {
 void Check_Button(void) {
 	while (1) {
 		if        ( GPIO_ReadInputDataBit(Button_Port, Button_Hold  ) == 0) {
+			if (device.page == Page_Start) {
+				device.s_pull = NO_PULL;
+				osSemaphore_Give(&Sema_MCU);
+			}
 			device.page = Page_Defaut;
 			g_draw_state = 1;
 			osSemaphore_Give(&Sema_Draw);
@@ -331,8 +344,12 @@ void Receive_Data(void) {
 				device.current_times  = ascii_to_int(&buffer_mcu_data[21],5);
 				device.mode           = buffer_mcu_data[26];
 				g_buffer_mcu_flag = 0;
-				if (device.uart == Uart_On) {
-					Usart3_printf("%d,%d,0,%d,%d,%d,0,%d\n",device.func,device.current_times,device.force,device.current_force,device.current_res,device.current_length);
+				if ((device.uart == Uart_On) && (device.current_times <device.times)) {
+					if (device.current_res > 2000000000) {
+						Usart3_printf("%d,%d,0,%d,%d,2000000000,0,%d\n",device.func,device.current_times,device.force,device.current_force,device.current_length);
+					} else {
+						Usart3_printf("%d,%d,0,%d,%d,%d,0,%d\n",device.func,device.current_times,device.force,device.current_force,device.current_res,device.current_length);
+					}
 				}
 				g_draw_state = 2;
 				osSemaphore_Give(&Sema_Draw);

@@ -36,7 +36,17 @@ Enable_Peripheral device;
 void Receive_Form_VCU(void) {
 	while (1) {
 		osCooperative_Wait(&Sema_usart1_handler);
-		if (buffer_usart1_data[0] == 'S') {
+		if (buffer_usart1_data[0] == 'T') {
+			GPIO_SetBits(Step_Port, Step_En);
+			GPIO_ResetBits(Step_Port, Step_Dir);
+			device.current_pull = NO_PULL;
+		} else if (buffer_usart1_data[0] == 'U') {
+			GPIO_ResetBits(Step_Port, Step_En);
+			GPIO_ResetBits(Step_Port, Step_Dir);
+		} else if (buffer_usart1_data[0] == 'D') {
+			GPIO_ResetBits(Step_Port, Step_En);
+			GPIO_SetBits(Step_Port, Step_Dir);
+		}	else if (buffer_usart1_data[0] == 'S') {
 			system_reset(&device);
 			for(int z = 0; z < 3; z++) {
 				device.offset = weigh();
@@ -64,15 +74,6 @@ void Receive_Form_VCU(void) {
 			device.set_force = (ascii_to_int(&buffer_usart1_data[3],4)) * 1000;
 			device.times  = ascii_to_int(&buffer_usart1_data[7],4);
 			device.speed = 1;
-		} else if (buffer_usart1_data[0] == 'T') {
-			GPIO_SetBits(Step_Port, Step_En);
-			GPIO_ResetBits(Step_Port, Step_Dir);
-		} else if (buffer_usart1_data[0] == 'U') {
-			GPIO_ResetBits(Step_Port, Step_En);
-			GPIO_ResetBits(Step_Port, Step_Dir);
-		} else if (buffer_usart1_data[0] == 'D') {
-			GPIO_ResetBits(Step_Port, Step_En);
-			GPIO_SetBits(Step_Port, Step_Dir);
 		}
 	}
 }
@@ -100,12 +101,16 @@ void System_Blance(void) {
 void Control_Motor(void) {
 	while (1) {
 		//uint32_t delay = 1;
-		if ((device.blance == Blance_Disable) && (device.current_pull != NO_PULL)) {
+		if ((device.blance == Blance_Disable) && (device.current_pull == PULL_RE)) {
 			device.pull = Current_pull;
 			if (device.pull == Current_pull) {
 				while (device.current_force < device.set_force) {
 					GPIO_ResetBits(Step_Port, Step_Dir);
 					GPIO_ResetBits(Step_Port, Step_En);
+					if (device.current_pull == NO_PULL) {
+						GPIO_SetBits(Step_Port, Step_En);
+						break;
+					}
 				}
 				if (device.current_force >= device.set_force) {
 					device.pull = Current_re;
@@ -115,6 +120,10 @@ void Control_Motor(void) {
 				while (device.current_force > 10) {
 					GPIO_SetBits(Step_Port, Step_Dir);
 					GPIO_ResetBits(Step_Port, Step_En);
+					if (device.current_pull == NO_PULL) {
+						GPIO_SetBits(Step_Port, Step_En);
+						break;
+					}
 				}
 				if (device.current_force <= 10) {
 					Timer3_Delay_us(50);
@@ -130,6 +139,22 @@ void Control_Motor(void) {
 				}
 			}
 		}
+		if ((device.blance == Blance_Disable) && (device.current_pull == PULL)) {
+			device.pull = Current_pull;
+			if (device.pull == Current_pull) {
+				while (device.current_force < device.set_force) {
+					GPIO_ResetBits(Step_Port, Step_Dir);
+					GPIO_ResetBits(Step_Port, Step_En);
+					if (device.current_pull == NO_PULL) {
+						GPIO_SetBits(Step_Port, Step_En);
+						break;
+					}
+				}
+				if (device.current_force >= device.set_force) {
+					device.current_pull = NO_PULL;
+				}
+			} 
+		}
 		osThreadYield();
 	}
 }
@@ -143,7 +168,6 @@ void Read_Force(void) {
 		value_force = -getForce(device.offset);
 		if (value_force <= 0) {
 			value_force = -getForce(device.offset);
-			device.current_force = 11;
 		} else {
 			device.current_force = value_force;
 		}
@@ -161,7 +185,7 @@ void Read_Resistor(void) {
 		osCooperative_Wait(&Sema_RES);
 		switch (count) {
 			case 0:
-				value = ADC_Range7_Resistance(2);
+				value = ADC_Range7_Resistance(5);
 				count++;
 				if (value > 2000000) {
 					device.current_resistor = (uint32_t)((value * 100) / 1 );
@@ -169,7 +193,7 @@ void Read_Resistor(void) {
 					break;
 				}
 			case 1:
-				value = ADC_Range6_Resistance(2);
+				value = ADC_Range6_Resistance(5);
 				count++;
 				if (value > 200000) {
 					device.current_resistor = (uint32_t)((value * 100) / 1 );
@@ -177,7 +201,7 @@ void Read_Resistor(void) {
 					break;
 				}
 			case 2:
-				value = ADC_Range5_Resistance(3, pga_2V);
+				value = ADC_Range5_Resistance(5, pga_2V);
 				count++;
 				if (value > 20000) {
 					device.current_resistor = (uint32_t)((value * 100) / 1 );
@@ -185,7 +209,7 @@ void Read_Resistor(void) {
 					break;
 				}
 			case 3:
-				value = ADC_Range4_Resistance(3, pga_2V);
+				value = ADC_Range4_Resistance(5, pga_2V);
 				count++;
 				if (value > 2000) {
 					device.current_resistor = (uint32_t)((value * 100) / 1 );
@@ -193,7 +217,7 @@ void Read_Resistor(void) {
 					break;
 				}
 			case 4:
-				value = ADC_Range3_Resistance(3, pga_2V);
+				value = ADC_Range3_Resistance(5, pga_2V);
 				count++;
 				if (value > 200) {
 					device.current_resistor = (uint32_t)((value * 100) / 1 );
@@ -201,7 +225,7 @@ void Read_Resistor(void) {
 					break;
 				}
 			case 5:
-				value = ADC_Range2_Resistance(3, pga_2V);
+				value = ADC_Range2_Resistance(5, pga_2V);
 				count++;
 				if (value > 20) {
 					device.current_resistor = (uint32_t)((value * 100) / 1 );
@@ -209,7 +233,7 @@ void Read_Resistor(void) {
 					break;
 				}
 			case 6:
-				value = ADC_Range1_Resistance(3, pga_2V);
+				value = ADC_Range1_Resistance(5, pga_2V);
 				count++;
 				if (value > 0.4) {
 					device.current_resistor = (uint32_t)((value * 100) / 1 );
@@ -238,9 +262,6 @@ void Transmit_To_VCU(void) {
 			}	else if (device.current_force > 55000 ) {
 				Usart1_printf("OOOOOOOOOOOOOOOOOOOOOOOOOOO");
 			}	else {
-				if (device.current_force <= 0) {
-					device.current_force = 11;
-				}
 				buffer_force[0] = (device.current_force / 10000) % 10 + '0';
 				buffer_force[1] = (device.current_force / 1000)  % 10 + '0';
 				buffer_force[2] = (device.current_force / 100)   % 10 + '0';
@@ -312,13 +333,7 @@ int main (void) {
 			device.offset = weigh();
 		}
 	}	
-//	I2C1_Init();
-//	VL6180X_Init();
 	
-	// Enable motor driver
-//  GPIO_ResetBits(Step_Port, Step_En);   // EN = HIGH (tùy c?u hình TB6600 c?a b?n)
-//  GPIO_SetBits(Step_Port, Step_Dir); // DIR = LOW (quay 1 chi?u)
-//	
 //	osKernelInit();
 //	osKernelAdd1Thread(*(Receive_Form_VCU));
 //	osKernelAdd1Thread(*(System_Blance));
@@ -330,20 +345,15 @@ int main (void) {
   	
 	while (1){
 //		// quay sang trai
-//		l_set_system = -getForce(device.offset);
-//		GPIO_ResetBits(Step_Port, Step_En);
-//		GPIO_ResetBits(Step_Port, Step_Dir);
-//		 
-//		if (l_set_system > 2000) {
-//			GPIO_SetBits(Step_Port, Step_Dir);
-//			Timer3_Delay_ms(30000);
-//			GPIO_SetBits(Step_Port, Step_En);
+//		l_set_system = weigh();
+
 			for(int z = 0; z < 3; z++) {
 				device.offset = weigh();
 				if (device.offset == 0) {
 					device.offset = weigh();
 				}
 			}
+			
 			osSemaphore_Init(&Sema_Blance, 0);
 			osSemaphore_Init(&Sema_Motor , 0);
 			osSemaphore_Init(&Sema_COM   , 0);
@@ -351,10 +361,10 @@ int main (void) {
 			osSemaphore_Init(&Sema_RES   , 0);
 			
 			osKernelInit();
-			osKernelAdd1Thread(*(Receive_Form_VCU));
 			osKernelAdd1Thread(*(System_Blance));
 			osKernelAdd1Thread(*(Control_Motor));
 			osKernelAdd1Thread(*(Read_Force));
+			osKernelAdd1Thread(*(Receive_Form_VCU));
 			osKernelAdd1Thread(*(Read_Resistor));
 			osKernelAdd1Thread(*(Transmit_To_VCU));
 			osKernelLaunch(quanta);
@@ -491,6 +501,16 @@ void TIM2_IRQHandler(void) {
 			if(tcbs[i].Sleep > 0){
 				tcbs[i].Sleep--;
 			}
+		}
+		if (buffer_usart1_data[0] == 'T') {
+			GPIO_SetBits(Step_Port, Step_En);
+			GPIO_ResetBits(Step_Port, Step_Dir);
+		} else if (buffer_usart1_data[0] == 'U') {
+			GPIO_ResetBits(Step_Port, Step_En);
+			GPIO_ResetBits(Step_Port, Step_Dir);
+		} else if (buffer_usart1_data[0] == 'D') {
+			GPIO_ResetBits(Step_Port, Step_En);
+			GPIO_SetBits(Step_Port, Step_Dir);
 		}
 		if((g_Timer_Tick % 2) == 0) {
 			GPIO_SetBits(Step_Port, Step_Pul);

@@ -44,10 +44,10 @@ YouTube: https://www.youtube.com/@hoangtriet9999
 #define SCK_PIN GPIO_Pin_4
 #define SCK_PORT GPIOB
 
-#define tare                8354131U 
-#define knownOriginal       11910000U
-#define knownHX711          609140U
-#define knownOriginalForce  44950U
+#define tare                8037224U 
+#define knownOriginal       11430000U
+#define knownHX711          410262U
+#define knownOriginalForce  0U
 
 typedef struct {
 	int32_t weight;

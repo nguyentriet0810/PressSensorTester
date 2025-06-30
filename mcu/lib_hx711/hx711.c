@@ -75,7 +75,7 @@ int32_t getHX711(void) {
 int32_t weigh()
 {
   int32_t  total = 0;
-  int32_t  samples = 1;
+  int32_t  samples = 2;
   int milligram;
   float coefficient;
   for(uint16_t i = 0 ; i < samples ; i++)
@@ -89,17 +89,12 @@ int32_t weigh()
 }
 
 int32_t getForce(int32_t offset) {
-//	int32_t ratio;
+	int32_t ratio;
 	float Force;
-//	float ConfigForce;
+	float ConfigForce;
 	int32_t weight;
 	weight = weigh(); // in milligram
-	Force = weight - offset;
-	Force = Force/1000;
-	if(Force < -150000) {
-		weight = weigh(); // in milligram
-		Force = weight - offset;
-		Force = Force/1000;
-	}
+	Force = (weight - offset)/1000;
+	ratio = (Force*100)/knownOriginalForce;
 	return Force;
 }

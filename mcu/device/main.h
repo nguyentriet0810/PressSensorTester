@@ -88,7 +88,7 @@ typedef struct {
 	uint32_t      current_resistor;
 	int16_t       times;
 	uint32_t      current_times;
-	int16_t       set_force;
+	uint16_t      set_force;
 	uint16_t      current_length;
 	uint8_t       speed;
 	Auto_Blance   blance;
